@@ -7,6 +7,7 @@
 - Add a way to edit the data after it has been saved.
 - Add a way to delete the data after it has been saved.
 - Add a way to view the data after it has been saved.
+- When saving data make it s that it is for a single athlete
 
 - Add a way to view the data as a graph. 
 - Add a way to view the data as a table.
