@@ -1,6 +1,6 @@
-- Change the way it takes the FTP to be user input
-- Change the way it takes the weight to be user input. 
-- Change the way the name is inputtet. 
+[Done] Change the way it takes the FTP to be user input
+[Done] Change the way it takes the weight to be user input.
+[Done] Change the way the name is input. 
 
 - Add a way to save the data to a file.
 - Add a way to load the data from a file.
