@@ -1,8 +1,10 @@
+package Ftp;
+
 public class ftp {
     public String User;
-    private Double weigth;
-    ftp(String user, Double weight){
-        // Constructor for the ftp c½lass
+    public Double weigth;
+    public ftp(String user, Double weight){
+        // Constructor for the Ftp.ftp c½lass
         User = user;
         weigth = weight;
     }
@@ -36,7 +38,7 @@ public class ftp {
         }
     }
 
-    private void printFtp(double x){
+    public void printFtp(double x){
         // Print the FTP of the number x;
         IO.println(String.format("The FTP of for " + User + " is " + x, x, User));
         // When choosen without weight then it will be null and thus needs this.

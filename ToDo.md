@@ -1,6 +1,24 @@
-[Done] Change the way it takes the FTP to be user input
-[Done] Change the way it takes the weight to be user input.
-[Done] Change the way the name is input. 
+- Input objects
+  - [Done] Change the way it takes the FTP to be user input
+  - [Done] Change the way it takes the weight to be user input.
+  - [Done] Change the way the name is input. 
+
+- Add test cases for
+  - firstInput is outside applicable range
+  - firstInput is 1
+  - firstInput is 2
+  - name field is string
+  - name field is numbers
+  - name field is a combination
+  - weight is 70
+  - weight is 170 
+  - weight is -70
+  - weight is strings
+  - power is 70
+  - power is 170
+  - power is -70
+  - power is strings
+
 
 - Add a way to save the data to a file.
 - Add a way to load the data from a file.
