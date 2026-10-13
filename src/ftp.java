@@ -1,7 +1,7 @@
 public class ftp {
     public String User;
-    private double weigth;
-    ftp(String user, double weight){
+    private Double weigth;
+    ftp(String user, Double weight){
         // Constructor for the ftp c½lass
         User = user;
         weigth = weight;
@@ -25,18 +25,25 @@ public class ftp {
 
     public double ftpCalc(double x){
         // Take the FTP of the number x
-
-        double ftp = x * 0.95;
-        printFtp(ftp);
-        printFTPZone(ftp);
-        return ftp;
+        if(x> 650){
+            System.out.println("The specified power is not realistic:");
+            return 0.00;
+        }else {
+            double ftp = x * 0.95;
+            printFtp(ftp);
+            printFTPZone(ftp);
+            return ftp;
+        }
     }
 
     private void printFtp(double x){
         // Print the FTP of the number x;
-
         IO.println(String.format("The FTP of for " + User + " is " + x, x, User));
-        if(weigth > 0) {
+        // When choosen without weight then it will be null and thus needs this.
+        if(weigth== null){
+        }
+        // Checks if the weight is larger than zero.
+        else if(weigth > 0) {
             IO.println(String.format("The FTP to Weigth ratio is " + x / weigth, x / weigth));
         }
     }
@@ -45,7 +52,10 @@ public class ftp {
         // Print the FTP zones of the number x
 
         double ftp = x;
-
+        double z7 = ftp*7.00;
+        if (z7>2000){
+            z7 = 2000;
+        }
 
         IO.println(String.format("Zone 1(Rest): %.2f - %.2f", ftp * 0.00, ftp * 0.75));
         IO.println(String.format("Zone 2(Endurance): %.2f - %.2f", ftp * 0.76, ftp * 0.90));
@@ -53,6 +63,6 @@ public class ftp {
         IO.println(String.format("Zone 4(Threshold): %.2f - %.2f", ftp * 1.06, ftp * 1.20));
         IO.println(String.format("Zone 5(VO2max): %.2f - %.2f", ftp * 1.21, ftp * 1.50));
         IO.println(String.format("Zone 6(Anaerobic): %.2f - %.2f", ftp * 1.51, ftp * 2.00));
-        IO.println(String.format("Zone 7(Sprint): %.2f - %.2f", ftp * 2.01, ftp * 7.00));
+        IO.println(String.format("Zone 7(Sprint): %.2f - %.2f", ftp * 2.01, z7));
     }
 }
