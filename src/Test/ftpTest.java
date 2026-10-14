@@ -23,5 +23,20 @@ public class ftpTest {
         assertEquals(0.00, calculator.getWeight());
         assertEquals(95.0, calculator.ftpCalc(100.0));
     }
+    @Test
+    void testSetNameValues(){
+        calculator.setUser("214asd");
+        assertEquals("214asd", calculator.getUser());
+    }
+    @Test
+    void testSetWeight(){
+        calculator.setWeight(60);
+        assertEquals(60.0, calculator.getWeight());
+    }
+    @Test
+    void testPowerValues(){
+        calculator.ftpCalc(300);
+        assertEquals(285,calculator.ftpCalc(300));
+    }
 
 }
