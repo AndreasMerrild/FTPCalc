@@ -38,5 +38,13 @@ public class ftpTest {
         calculator.ftpCalc(300);
         assertEquals(285,calculator.ftpCalc(300));
     }
+    @Test
+    void testFTPValueAboveAccepted(){
+        assertEquals(0.00, calculator.ftpCalc(900));
+    }
+    @Test
+    void testFTPValueUnderAccepted(){
+        assertEquals(0.00, calculator.ftpCalc(-20));
+    }
 
 }

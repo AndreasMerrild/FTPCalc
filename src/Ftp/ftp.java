@@ -27,12 +27,16 @@ public class ftp {
 
     public double ftpCalc(double x){
         // Take the FTP of the number x
-        if(x> 650){
+        if(x> 650||x < 0){
+            // Check if the power is actually possible might need to change as training and nutrition becomes better
             System.out.println("The specified power is not realistic:");
             return 0.00;
         }else {
+            // The normal thinking is to take a 20 min test and multiply the amount with 0.95 to get the Functional Threshold Power
             double ftp = x * 0.95;
+            // prints the FTP out
             printFtp(ftp);
+            // Also gets the zones out
             printFTPZone(ftp);
             return ftp;
         }
