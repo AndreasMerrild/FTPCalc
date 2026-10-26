@@ -73,6 +73,7 @@ public class Running {
                     printAverage("Average power", activity.averagePower(), " W");
                     printAverage("Average speed", activity.averageSpeed(), " m/s");
                     printAverage("Average cadence", activity.averageCadence(), " rpm");
+                    printAverage("Average heart rate", activity.averageHeartRate(), " bpm");
                     if (activity.deviceName() != null) {
                         System.out.println("Device: " + activity.deviceName());
                     }
