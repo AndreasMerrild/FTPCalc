@@ -28,3 +28,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# Local FIT test recordings
+Test/Test/*.fit

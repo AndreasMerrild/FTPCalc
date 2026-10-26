@@ -14,5 +14,9 @@ downloaded.
 Choose `3 : Parse a .fit activity file` in the application and enter the path to
 the FIT file. `FitParser` decodes the activity records and exposes timestamps,
 power, heart rate, speed, and cadence through `FitActivity`. The application
-also prints a summary containing duration and the average power, speed, and
-cadence. Speed is reported in the units stored by the FIT file, normally m/s.
+also prints a summary containing duration and the average power, speed, heart
+rate, and cadence. Speed is converted from the FIT file's m/s value and reported in km/h.
+The application also opens a power-over-time line graph for records containing
+both a timestamp and power value. The graph uses a 3-second moving average,
+shows time in minutes, uses 100 W intervals on the power axis with headroom
+above the maximum power, and draws only the smoothed line.

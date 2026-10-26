@@ -13,6 +13,8 @@ public record FitActivity(
         Instant endTime,
         List<FitRecord> records) {
 
+    private static final double METERS_PER_SECOND_TO_KILOMETERS_PER_HOUR = 3.6;
+
     public FitActivity {
         records = List.copyOf(records);
     }
@@ -29,7 +31,8 @@ public record FitActivity(
     }
 
     public Double averageSpeed() {
-        return average(records.stream().map(FitRecord::speed).toList());
+        Double averageSpeed = average(records.stream().map(FitRecord::speed).toList());
+        return averageSpeed == null ? null : averageSpeed * METERS_PER_SECOND_TO_KILOMETERS_PER_HOUR;
     }
 
     public Double averageCadence() {

@@ -1,8 +1,8 @@
 package Test;
 
 import Ftp.ftp;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -46,5 +46,4 @@ public class ftpTest {
     void testFTPValueUnderAccepted(){
         assertEquals(0.00, calculator.ftpCalc(-20));
     }
-
 }

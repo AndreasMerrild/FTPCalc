@@ -26,10 +26,12 @@ public class Running {
         }
         public void printOptions(boolean first){
             if(first == true) {
+                System.out.println("---------------------------------------------------");
                 System.out.println("Welcome to the power calculater. ");
                 System.out.println("Please submit all numbers as doubles (XXX.XX)");
                 System.out.println("Let's start by choosing what part you want.");
             }
+            System.out.println("---------------------------------------------------");
             System.out.println("Type in the number for the functionality you want:");
             System.out.println("1 : FTP zone calculation w weight");
             System.out.println("2 : FTP zone calculation w/o weight");
@@ -58,7 +60,8 @@ public class Running {
                 myFtp.ftpCalc(power);
             }
             else if(firstInput==3){
-                Path file = chooseFitFile();
+                System.out.println("Please select a FIT activity file to parse.");
+                Path file = fitFileUsage.chooseFitFile();
                 if (file == null) {
                     System.out.println("No FIT file selected.");
                     return active;
@@ -69,14 +72,15 @@ public class Running {
                     System.out.println("Parsed " + activity.records().size() + " records.");
                     System.out.println("Start: " + activity.startTime());
                     System.out.println("End: " + activity.endTime());
-                    System.out.println("Duration: " + formatDuration(activity.duration()));
-                    printAverage("Average power", activity.averagePower(), " W");
-                    printAverage("Average speed", activity.averageSpeed(), " m/s");
-                    printAverage("Average cadence", activity.averageCadence(), " rpm");
-                    printAverage("Average heart rate", activity.averageHeartRate(), " bpm");
+                    System.out.println("Duration: " + fitFileUsage.formatDuration(activity.duration()));
+                    fitFileUsage.printAverage("Average power", activity.averagePower(), " W");
+                    fitFileUsage.printAverage("Average speed", activity.averageSpeed(), " km/h");
+                    fitFileUsage.printAverage("Average cadence", activity.averageCadence(), " rpm");
+                    fitFileUsage.printAverage("Average heart rate", activity.averageHeartRate(), " bpm");
                     if (activity.deviceName() != null) {
                         System.out.println("Device: " + activity.deviceName());
                     }
+                    Graph.showPowerGraph(activity);
                 } catch (IOException | RuntimeException exception) {
                     System.out.println("Could not parse FIT file: " + exception.getMessage());
                     if (exception.getCause() != null) {
@@ -95,36 +99,5 @@ public class Running {
             return active;
         }
 
-        private void printAverage(String label, Double value, String unit) {
-            if (value == null) {
-                System.out.println(label + ": unavailable");
-            } else {
-                System.out.printf("%s: %.2f%s%n", label, value, unit);
-            }
-        }
 
-        private String formatDuration(java.time.Duration duration) {
-            long seconds = duration.getSeconds();
-            return String.format("%02d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60);
-        }
-
-        private Path chooseFitFile() {
-            if (GraphicsEnvironment.isHeadless()) {
-                System.out.println("Cannot open the FIT file chooser because Java is running in headless mode.");
-                return null;
-            }
-
-            FileDialog fileDialog = new FileDialog(
-                    (Frame) null, "Select a FIT activity file", FileDialog.LOAD);
-            fileDialog.setFilenameFilter((directory, name) ->
-                    name.toLowerCase(java.util.Locale.ROOT).endsWith(".fit"));
-            fileDialog.setAlwaysOnTop(true);
-            fileDialog.setVisible(true);
-
-            if (fileDialog.getFile() == null) {
-                return null;
-            }
-
-            return Path.of(fileDialog.getDirectory(), fileDialog.getFile());
-        }
 }

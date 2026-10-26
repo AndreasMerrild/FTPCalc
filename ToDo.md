@@ -21,7 +21,7 @@
 
 
 - [Done] Add a way to load fit files and extract the data from them.
-- Add a way to view the powerdata from the fit files as a graph.
+- [Done] Add a way to view the powerdata from the fit files as a graph.
 - Add a way to view the best power graph with time on x axis and power on y axis.
 - Add a way to view the best power graph with time on x axis and power/weight on y axis.
 
