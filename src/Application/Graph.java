@@ -15,6 +15,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Line2D;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public final class Graph extends JPanel {
@@ -24,11 +25,24 @@ public final class Graph extends JPanel {
     private static final int RIGHT_MARGIN = 25;
     private static final int TOP_MARGIN = 30;
     private static final int BOTTOM_MARGIN = 55;
+    private static final int[] BEST_POWER_INTERVALS_SECONDS = {
+            1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 45, 60, 90,
+            120, 180, 240, 300, 600, 720, 1200, 1800, 2400,
+            3600, 7200, 10800
+    };
 
     private final List<PowerPoint> points;
+    private final boolean bestPowerGraph;
 
     public Graph(FitActivity activity) {
-        points = powerPoints(activity);
+        this(activity, false);
+    }
+
+    private Graph(FitActivity activity, boolean bestPowerGraph) {
+        this.bestPowerGraph = bestPowerGraph;
+        points = bestPowerGraph
+                ? new ArrayList<>(bestPowerPoints(activity))
+                : powerPoints(activity);
         setPreferredSize(new Dimension(900, 550));
         setBackground(Color.WHITE);
     }
@@ -49,6 +63,22 @@ public final class Graph extends JPanel {
         });
     }
 
+    public static void showBestPowerGraph(FitActivity activity) {
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            System.out.println("Cannot display the best power graph because Java is running in headless mode.");
+            return;
+        }
+
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Best power duration curve");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setContentPane(new Graph(activity, true));
+            frame.pack();
+            frame.setLocationByPlatform(true);
+            frame.setVisible(true);
+        });
+    }
+
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
@@ -57,7 +87,9 @@ public final class Graph extends JPanel {
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             if (points.isEmpty()) {
-                drawCenteredMessage(g, "No power data with timestamps available.");
+                drawCenteredMessage(g, bestPowerGraph
+                        ? "No power data for the requested intervals available."
+                        : "No power data with timestamps available.");
                 return;
             }
 
@@ -71,26 +103,38 @@ public final class Graph extends JPanel {
             g.drawLine(LEFT_MARGIN, TOP_MARGIN, LEFT_MARGIN, TOP_MARGIN + plotHeight);
             g.drawLine(LEFT_MARGIN, TOP_MARGIN + plotHeight,
                     LEFT_MARGIN + plotWidth, TOP_MARGIN + plotHeight);
-            drawAxisTicks(g, maxTimeMinutes, chartMaxPower, plotWidth, plotHeight);
+            if (bestPowerGraph) {
+                drawBestPowerAxisTicks(g, maxTimeMinutes, chartMaxPower, plotWidth, plotHeight);
+            } else {
+                drawAxisTicks(g, maxTimeMinutes, chartMaxPower, plotWidth, plotHeight);
+            }
 
             g.setColor(new Color(35, 100, 190));
             g.setStroke(new BasicStroke(2f));
             for (int i = 1; i < points.size(); i++) {
                 PowerPoint previous = points.get(i - 1);
                 PowerPoint current = points.get(i);
+                double previousX = bestPowerGraph
+                        ? x(i - 1, points.size() - 1, plotWidth)
+                        : x(previous.seconds() / 60.0, maxTimeMinutes, plotWidth);
+                double currentX = bestPowerGraph
+                        ? x(i, points.size() - 1, plotWidth)
+                        : x(current.seconds() / 60.0, maxTimeMinutes, plotWidth);
                 g.draw(new Line2D.Double(
-                        x(previous.seconds() / 60.0, maxTimeMinutes, plotWidth),
+                        previousX,
                         y(previous.power(), chartMaxPower, plotHeight),
-                        x(current.seconds() / 60.0, maxTimeMinutes, plotWidth),
+                        currentX,
                         y(current.power(), chartMaxPower, plotHeight)));
             }
 
             g.setColor(Color.DARK_GRAY);
             FontMetrics metrics = g.getFontMetrics();
-            g.drawString("Time (minutes)", LEFT_MARGIN + (plotWidth - metrics.stringWidth("Time (minutes)")) / 2,
+            String xAxisLabel = bestPowerGraph ? "Interval" : "Time (minutes)";
+            g.drawString(xAxisLabel, LEFT_MARGIN + (plotWidth - metrics.stringWidth(xAxisLabel)) / 2,
                     getHeight() - 15);
             g.rotate(-Math.PI / 2);
-            g.drawString("Power (W)", -(TOP_MARGIN + plotHeight / 2 + metrics.stringWidth("Power (W)") / 2), 20);
+            String yAxisLabel = "Power (W)";
+            g.drawString(yAxisLabel, -(TOP_MARGIN + plotHeight / 2 + metrics.stringWidth(yAxisLabel) / 2), 20);
         } finally {
             g.dispose();
         }
@@ -127,14 +171,53 @@ public final class Graph extends JPanel {
 
     }
 
-    private String formatAxisValue(double value) {
-        return value == Math.rint(value)
-                ? String.format("%.0f", value)
-                : String.format("%.1f", value);
+    private void drawBestPowerAxisTicks(Graphics2D g, double maxTimeMinutes, double maxPower,
+                                        int plotWidth, int plotHeight) {
+        FontMetrics metrics = g.getFontMetrics();
+        for (int index = 0; index < points.size(); index++) {
+            PowerPoint point = points.get(index);
+            int x = (int) Math.round(x(index, Math.max(points.size() - 1, 1), plotWidth));
+            g.setColor(new Color(225, 225, 225));
+            g.drawLine(x, TOP_MARGIN, x, TOP_MARGIN + plotHeight);
+            g.setColor(Color.DARK_GRAY);
+            String label = formatDurationLabel((int) point.seconds());
+            g.drawString(label, x - metrics.stringWidth(label) / 2,
+                    TOP_MARGIN + plotHeight + metrics.getAscent() + 8);
+        }
+
+        drawPowerTicks(g, maxPower, plotWidth, plotHeight);
+    }
+
+    private void drawPowerTicks(Graphics2D g, double maxPower, int plotWidth, int plotHeight) {
+        FontMetrics metrics = g.getFontMetrics();
+        for (int power = 0; power <= maxPower; power += 100) {
+            double fraction = power / maxPower;
+            int y = (int) Math.round(TOP_MARGIN + plotHeight - fraction * plotHeight);
+            g.setColor(new Color(225, 225, 225));
+            g.drawLine(LEFT_MARGIN, y, LEFT_MARGIN + plotWidth, y);
+            g.setColor(Color.DARK_GRAY);
+            String powerLabel = Integer.toString(power);
+            g.drawString(powerLabel, LEFT_MARGIN - metrics.stringWidth(powerLabel) - 8,
+                    y + metrics.getAscent() / 2);
+        }
+    }
+
+    private String formatDurationLabel(int seconds) {
+        if (seconds < 60) {
+            return seconds + "s";
+        }
+        if (seconds % 3600 == 0) {
+            return seconds / 3600 + "h";
+        }
+        return seconds / 60 + "m";
     }
 
     private double x(double minutes, double maxTimeMinutes, int plotWidth) {
         return LEFT_MARGIN + minutes / maxTimeMinutes * plotWidth;
+    }
+
+    private double x(int index, int lastIndex, int plotWidth) {
+        return LEFT_MARGIN + (double) index / lastIndex * plotWidth;
     }
 
     private double y(double power, double maxPower, int plotHeight) {
@@ -162,6 +245,68 @@ public final class Graph extends JPanel {
         return smooth(result);
     }
 
+    /**
+     * Returns the mean-maximal power for every requested duration that fits the ride.
+     * Each FIT power sample is treated as applying until the next timestamp.
+     */
+    public static List<PowerPoint> bestPowerPoints(FitActivity activity) {
+        List<PowerPoint> result = new ArrayList<>();
+        for (int interval : BEST_POWER_INTERVALS_SECONDS) {
+            Double power = bestPowerWatts(activity, interval);
+            if (power != null) {
+                result.add(new PowerPoint(interval, power));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    public static Double bestPowerWatts(FitActivity activity, int intervalSeconds) {
+        if (activity == null || intervalSeconds <= 0) {
+            return null;
+        }
+
+        List<PowerPoint> raw = new ArrayList<>();
+        if (activity.startTime() == null) {
+            return null;
+        }
+        for (FitRecord record : activity.records()) {
+            if (record.timestamp() != null && record.power() != null) {
+                raw.add(new PowerPoint(
+                        Duration.between(activity.startTime(), record.timestamp()).toMillis() / 1000.0,
+                        record.power()));
+            }
+        }
+        raw.sort(Comparator.comparingDouble(PowerPoint::seconds));
+        if (raw.size() < 2 || raw.get(raw.size() - 1).seconds() < intervalSeconds) {
+            return null;
+        }
+
+        double best = Double.NEGATIVE_INFINITY;
+        for (PowerPoint end : raw) {
+            double windowStart = end.seconds() - intervalSeconds;
+            if (windowStart < 0) {
+                continue;
+            }
+
+            double weightedPower = 0;
+            double coveredSeconds = 0;
+            for (int index = 0; index < raw.size() - 1; index++) {
+                PowerPoint sample = raw.get(index);
+                PowerPoint next = raw.get(index + 1);
+                double overlapStart = Math.max(windowStart, sample.seconds());
+                double overlapEnd = Math.min(end.seconds(), next.seconds());
+                if (overlapEnd > overlapStart) {
+                    weightedPower += sample.power() * (overlapEnd - overlapStart);
+                    coveredSeconds += overlapEnd - overlapStart;
+                }
+            }
+            if (coveredSeconds >= intervalSeconds) {
+                best = Math.max(best, weightedPower / coveredSeconds);
+            }
+        }
+        return best == Double.NEGATIVE_INFINITY ? null : best;
+    }
+
     private static List<PowerPoint> smooth(List<PowerPoint> rawPoints) {
         List<PowerPoint> smoothed = new ArrayList<>(rawPoints.size());
         double halfWindow = SMOOTHING_WINDOW_SECONDS / 2;
@@ -181,6 +326,6 @@ public final class Graph extends JPanel {
         return List.copyOf(smoothed);
     }
 
-    private record PowerPoint(double seconds, double power) {
+    public record PowerPoint(double seconds, double power) {
     }
 }

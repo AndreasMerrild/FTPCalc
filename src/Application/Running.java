@@ -36,6 +36,7 @@ public class Running {
             System.out.println("1 : FTP zone calculation w weight");
             System.out.println("2 : FTP zone calculation w/o weight");
             System.out.println("3 : Parse a .fit activity file");
+            System.out.println("4 : Parse multiple .fit activity files");
 
             System.out.println("0 : Exit program");
         }
@@ -81,11 +82,29 @@ public class Running {
                         System.out.println("Device: " + activity.deviceName());
                     }
                     Graph.showPowerGraph(activity);
+                    Graph.showBestPowerGraph(activity);
                 } catch (IOException | RuntimeException exception) {
                     System.out.println("Could not parse FIT file: " + exception.getMessage());
                     if (exception.getCause() != null) {
                         System.out.println("Decoder detail: " + exception.getCause());
                     }
+                }
+            }
+            else if(firstInput==4){
+                System.out.println("Enter the directory containing the FIT files:");
+                scanner.nextLine();
+                String directoryText = scanner.nextLine().trim();
+                if (directoryText.isEmpty()) {
+                    System.out.println("No directory specified.");
+                    return active;
+                }
+
+                try {
+                    multiFileUsage usage = new multiFileUsage();
+                    usage.loadFiles(Path.of(directoryText));
+                    usage.printSummary();
+                } catch (IOException | RuntimeException exception) {
+                    System.out.println("Could not load FIT files: " + exception.getMessage());
                 }
             }
             else if(firstInput==0){
