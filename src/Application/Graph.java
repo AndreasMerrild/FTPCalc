@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public final class Graph extends JPanel {
     private static final double SMOOTHING_WINDOW_SECONDS = 3.0;
@@ -36,19 +37,27 @@ public final class Graph extends JPanel {
     private final boolean powerWeightGraph;
 
     public Graph(FitActivity activity) {
-        this(activity, false, false);
+        this(activity, false, false, 0);
     }
 
-    private Graph(FitActivity activity, boolean bestPowerGraph, boolean powerWeightGraph) {
+    private Graph(FitActivity activity, boolean bestPowerGraph, boolean powerWeightGraph, int weight) {
+        if (powerWeightGraph && weight <= 0) {
+            throw new IllegalArgumentException("Weight must be greater than zero.");
+        }
         this.bestPowerGraph = bestPowerGraph;
         this.powerWeightGraph = powerWeightGraph;
         points = bestPowerGraph
-                ? new ArrayList<>(bestPowerPoints(activity))
+                ? new ArrayList<>(powerWeightGraph
+                        ? bestPowerPointsWeight(activity, weight)
+                        : bestPowerPoints(activity))
                 : powerPoints(activity);
         setPreferredSize(new Dimension(900, 550));
         setBackground(Color.WHITE);
     }
     public static void showPowerWeightGraph(FitActivity activity, int w) {
+        if (w <= 0) {
+            throw new IllegalArgumentException("Weight must be greater than zero.");
+        }
         if (java.awt.GraphicsEnvironment.isHeadless()) {
             System.out.println("Cannot display the power graph because Java is running in headless mode.");
             return;
@@ -57,12 +66,20 @@ public final class Graph extends JPanel {
         javax.swing.SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Power/Weight over time");
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.setContentPane(new Graph(activity, true, true));
+            frame.setContentPane(new Graph(activity, true, true, w));
             frame.pack();
             frame.setLocationByPlatform(true);
             frame.setVisible(true);
         });
     }
+    private Graph(List<PowerPoint> points, boolean powerWeightGraph) {
+        this.bestPowerGraph = true;
+        this.powerWeightGraph = powerWeightGraph;
+        this.points = List.copyOf(points);
+        setPreferredSize(new Dimension(900, 550));
+        setBackground(Color.WHITE);
+    }
+
     public static void showPowerGraph(FitActivity activity) {
         if (java.awt.GraphicsEnvironment.isHeadless()) {
             System.out.println("Cannot display the power graph because Java is running in headless mode.");
@@ -88,7 +105,42 @@ public final class Graph extends JPanel {
         javax.swing.SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Best power duration curve");
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.setContentPane(new Graph(activity, true, false));
+            frame.setContentPane(new Graph(activity, true, false, 0));
+            frame.pack();
+            frame.setLocationByPlatform(true);
+            frame.setVisible(true);
+        });
+    }
+
+    public static void showBestPowerGraph(List<FitActivity> activities) {
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            System.out.println("Cannot display the power graph because Java is running in headless mode.");
+            return;
+        }
+
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Best power duration curve");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setContentPane(new Graph(combineBestPowerPoints(activities, 0), false));
+            frame.pack();
+            frame.setLocationByPlatform(true);
+            frame.setVisible(true);
+        });
+    }
+
+    public static void showPowerWeightGraph(List<FitActivity> activities, int weight) {
+        if (weight <= 0) {
+            throw new IllegalArgumentException("Weight must be greater than zero.");
+        }
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            System.out.println("Cannot display the power graph because Java is running in headless mode.");
+            return;
+        }
+
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Power/Weight over time");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setContentPane(new Graph(combineBestPowerPoints(activities, weight), true));
             frame.pack();
             frame.setLocationByPlatform(true);
             frame.setVisible(true);
@@ -113,7 +165,9 @@ public final class Graph extends JPanel {
             int plotHeight = getHeight() - TOP_MARGIN - BOTTOM_MARGIN;
             double maxTimeMinutes = Math.max(points.get(points.size() - 1).seconds() / 60.0, 1);
             double maxPower = Math.max(points.stream().mapToDouble(PowerPoint::power).max().orElse(1), 1);
-            double chartMaxPower = Math.ceil(maxPower / 100.0) * 100.0 + 100.0;
+            double chartMaxPower = powerWeightGraph
+                    ? Math.ceil(maxPower) + 1
+                    : Math.ceil(maxPower / 100.0) * 100.0 + 100.0;
 
             g.setColor(Color.DARK_GRAY);
             g.drawLine(LEFT_MARGIN, TOP_MARGIN, LEFT_MARGIN, TOP_MARGIN + plotHeight);
@@ -149,7 +203,7 @@ public final class Graph extends JPanel {
             g.drawString(xAxisLabel, LEFT_MARGIN + (plotWidth - metrics.stringWidth(xAxisLabel)) / 2,
                     getHeight() - 15);
             g.rotate(-Math.PI / 2);
-            String yAxisLabel = "Power (W)";
+            String yAxisLabel = powerWeightGraph ? "Power/Weight (W/kg)" : "Power (W)";
             g.drawString(yAxisLabel, -(TOP_MARGIN + plotHeight / 2 + metrics.stringWidth(yAxisLabel) / 2), 20);
         } finally {
             g.dispose();
@@ -206,13 +260,16 @@ public final class Graph extends JPanel {
 
     private void drawPowerTicks(Graphics2D g, double maxPower, int plotWidth, int plotHeight) {
         FontMetrics metrics = g.getFontMetrics();
-        for (int power = 0; power <= maxPower; power += 100) {
+        double tickSize = powerWeightGraph ? 1 : 100;
+        for (double power = 0; power <= maxPower; power += tickSize) {
             double fraction = power / maxPower;
             int y = (int) Math.round(TOP_MARGIN + plotHeight - fraction * plotHeight);
             g.setColor(new Color(225, 225, 225));
             g.drawLine(LEFT_MARGIN, y, LEFT_MARGIN + plotWidth, y);
             g.setColor(Color.DARK_GRAY);
-            String powerLabel = Integer.toString(power);
+            String powerLabel = powerWeightGraph
+                    ? String.format("%.0f", power)
+                    : Integer.toString((int) power);
             g.drawString(powerLabel, LEFT_MARGIN - metrics.stringWidth(powerLabel) - 8,
                     y + metrics.getAscent() / 2);
         }
@@ -266,35 +323,32 @@ public final class Graph extends JPanel {
      * Each FIT power sample is treated as applying until the next timestamp.
      */
     public static List<PowerPoint> bestPowerPoints(FitActivity activity) {
-        List<PowerPoint> result = new ArrayList<>();
-        for (int interval : BEST_POWER_INTERVALS_SECONDS) {
-            Double power = bestPowerWatts(activity, interval);
-            if (power != null) {
-                result.add(new PowerPoint(interval, power));
-            }
-        }
-        return List.copyOf(result);
+        return bestPowerPoints(activity, 0);
     }
     public static List<PowerPoint> bestPowerPointsWeight(FitActivity activity, int weight) {
+        if (weight <= 0) {
+            throw new IllegalArgumentException("Weight must be greater than zero.");
+        }
+        return bestPowerPoints(activity, weight);
+    }
+
+    private static List<PowerPoint> bestPowerPoints(FitActivity activity, int weight) {
         List<PowerPoint> result = new ArrayList<>();
+        List<PowerPoint> raw = rawPowerPoints(activity);
         for (int interval : BEST_POWER_INTERVALS_SECONDS) {
-            Double power = bestPowerWatts(activity, interval)/weight;
+            Double power = bestPowerWatts(raw, interval);
             if (power != null) {
-                result.add(new PowerPoint(interval, power));
+                result.add(new PowerPoint(interval, weight > 0 ? power / weight : power));
             }
         }
         return List.copyOf(result);
     }
 
-    public static Double bestPowerWatts(FitActivity activity, int intervalSeconds) {
-        if (activity == null || intervalSeconds <= 0) {
-            return null;
+    private static List<PowerPoint> rawPowerPoints(FitActivity activity) {
+        if (activity == null || activity.startTime() == null) {
+            return List.of();
         }
-
         List<PowerPoint> raw = new ArrayList<>();
-        if (activity.startTime() == null) {
-            return null;
-        }
         for (FitRecord record : activity.records()) {
             if (record.timestamp() != null && record.power() != null) {
                 raw.add(new PowerPoint(
@@ -303,29 +357,93 @@ public final class Graph extends JPanel {
             }
         }
         raw.sort(Comparator.comparingDouble(PowerPoint::seconds));
+        return raw;
+    }
+
+    private static List<PowerPoint> combineBestPowerPoints(List<FitActivity> activities, int weight) {
+        if (activities == null || activities.isEmpty()) {
+            return List.of();
+        }
+        List<List<PowerPoint>> activityPoints = activities.stream()
+                .filter(Objects::nonNull)
+                .map(Graph::bestPowerPointsForAllIntervals)
+                .toList();
+        List<PowerPoint> result = new ArrayList<>();
+        for (int interval : BEST_POWER_INTERVALS_SECONDS) {
+            double best = Double.NEGATIVE_INFINITY;
+            for (List<PowerPoint> points : activityPoints) {
+                for (PowerPoint point : points) {
+                    if ((int) point.seconds() == interval) {
+                        best = Math.max(best, weight > 0 ? point.power() / weight : point.power());
+                        break;
+                    }
+                }
+            }
+            if (best != Double.NEGATIVE_INFINITY) {
+                result.add(new PowerPoint(interval, best));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static List<PowerPoint> bestPowerPointsForAllIntervals(FitActivity activity) {
+        List<PowerPoint> result = new ArrayList<>();
+        List<PowerPoint> raw = rawPowerPoints(activity);
+        for (int interval : BEST_POWER_INTERVALS_SECONDS) {
+            Double power = bestPowerWatts(raw, interval);
+            if (power != null) {
+                result.add(new PowerPoint(interval, power));
+            }
+        }
+        return result;
+    }
+
+    public static Double bestPowerWatts(FitActivity activity, int intervalSeconds) {
+        if (activity == null || intervalSeconds <= 0) {
+            return null;
+        }
+
+        List<PowerPoint> raw = rawPowerPoints(activity);
+        return bestPowerWatts(raw, intervalSeconds);
+    }
+
+    private static Double bestPowerWatts(List<PowerPoint> raw, int intervalSeconds) {
         if (raw.size() < 2 || raw.get(raw.size() - 1).seconds() < intervalSeconds) {
             return null;
         }
 
+        double[] integral = new double[raw.size()];
+        for (int index = 1; index < raw.size(); index++) {
+            PowerPoint previous = raw.get(index - 1);
+            PowerPoint current = raw.get(index);
+            integral[index] = integral[index - 1]
+                    + previous.power() * (current.seconds() - previous.seconds());
+        }
+
         double best = Double.NEGATIVE_INFINITY;
-        for (PowerPoint end : raw) {
+        int startIndex = 0;
+        for (int endIndex = 0; endIndex < raw.size(); endIndex++) {
+            PowerPoint end = raw.get(endIndex);
             double windowStart = end.seconds() - intervalSeconds;
             if (windowStart < 0) {
                 continue;
             }
-
-            double weightedPower = 0;
-            double coveredSeconds = 0;
-            for (int index = 0; index < raw.size() - 1; index++) {
-                PowerPoint sample = raw.get(index);
-                PowerPoint next = raw.get(index + 1);
-                double overlapStart = Math.max(windowStart, sample.seconds());
-                double overlapEnd = Math.min(end.seconds(), next.seconds());
-                if (overlapEnd > overlapStart) {
-                    weightedPower += sample.power() * (overlapEnd - overlapStart);
-                    coveredSeconds += overlapEnd - overlapStart;
-                }
+            if (windowStart < raw.get(0).seconds()) {
+                continue;
             }
+
+            while (startIndex + 1 < raw.size()
+                    && raw.get(startIndex + 1).seconds() <= windowStart) {
+                startIndex++;
+            }
+            if (startIndex >= raw.size() - 1) {
+                continue;
+            }
+            PowerPoint sample = raw.get(startIndex);
+            double weightedPower = integral[endIndex]
+                    - integral[startIndex]
+                    - sample.power() * (windowStart - sample.seconds());
+            double coveredSeconds = end.seconds() - windowStart;
             if (coveredSeconds >= intervalSeconds) {
                 best = Math.max(best, weightedPower / coveredSeconds);
             }
@@ -336,18 +454,21 @@ public final class Graph extends JPanel {
     private static List<PowerPoint> smooth(List<PowerPoint> rawPoints) {
         List<PowerPoint> smoothed = new ArrayList<>(rawPoints.size());
         double halfWindow = SMOOTHING_WINDOW_SECONDS / 2;
+        int left = 0;
+        int right = 0;
+        double powerSum = 0;
         for (PowerPoint point : rawPoints) {
             double lowerBound = point.seconds() - halfWindow;
             double upperBound = point.seconds() + halfWindow;
-            double powerSum = 0;
-            int sampleCount = 0;
-            for (PowerPoint candidate : rawPoints) {
-                if (candidate.seconds() >= lowerBound && candidate.seconds() <= upperBound) {
-                    powerSum += candidate.power();
-                    sampleCount++;
-                }
+            while (right < rawPoints.size() && rawPoints.get(right).seconds() <= upperBound) {
+                powerSum += rawPoints.get(right).power();
+                right++;
             }
-            smoothed.add(new PowerPoint(point.seconds(), powerSum / sampleCount));
+            while (left < right && rawPoints.get(left).seconds() < lowerBound) {
+                powerSum -= rawPoints.get(left).power();
+                left++;
+            }
+            smoothed.add(new PowerPoint(point.seconds(), powerSum / (right - left)));
         }
         return List.copyOf(smoothed);
     }

@@ -105,6 +105,7 @@ public class Running {
                             System.out.println("Please specify the weight of the athlete in question. ");
                             int w = scanner.nextInt();
                             System.out.println("Showing a graph with best power per weight data");
+                            Graph.showPowerWeightGraph(activity, w);
                         }
                         else if (choice.equals("4")) {
                             System.out.println("Showing a table with best powerdata");
@@ -113,6 +114,9 @@ public class Running {
                             System.out.println("Please specify the weight of the athlete in question. ");
                             int w = scanner.nextInt();
                             System.out.println("Showing a table with best power per weight data");
+                        }
+                        else {
+                            System.out.println("This is not applicable at the moment please try one of the other options. ");
                         }
                     }
                 } catch (IOException | RuntimeException exception) {
@@ -130,13 +134,39 @@ public class Running {
                     System.out.println("No directory specified.");
                     return active;
                 }
-
+                multiFileUsage usage = new multiFileUsage();
                 try {
-                    multiFileUsage usage = new multiFileUsage();
                     usage.loadFiles(Path.of(directoryText));
                     usage.printSummary();
                 } catch (IOException | RuntimeException exception) {
                     System.out.println("Could not load FIT files: " + exception.getMessage());
+                    return active;
+                }
+                boolean m = true;
+                while(m){
+                    System.out.println("What do you want shown? ");
+                    System.out.println("0: Nothing other than averages");
+                    System.out.println("1: Show the best power graph");
+                    System.out.println("2: Show the best Power/kg graph");
+                    String choice = scanner.next();
+                    if (choice.equals("0")) {
+                        System.out.println("Returning to the start screen");
+                        m =  false;
+                    }
+                    else if (choice.equals("1")) {
+                        System.out.println("Showing a graph with best power data");
+                        Graph.showBestPowerGraph(usage.activities());
+                    }
+                    else if (choice.equals("2")) {
+                        System.out.println("Please specify the weight of the athlete in question. ");
+                        int w = scanner.nextInt();
+                        System.out.println("Showing a graph with best power per weight data");
+                        Graph.showPowerWeightGraph(usage.activities(), w);
+                    }
+                    else {
+                        System.out.println("This is not applicable at the moment please try one of the other options. ");
+                    }
+
                 }
             }
             else if(firstInput==0){
