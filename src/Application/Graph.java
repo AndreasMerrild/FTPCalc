@@ -33,20 +33,36 @@ public final class Graph extends JPanel {
 
     private final List<PowerPoint> points;
     private final boolean bestPowerGraph;
+    private final boolean powerWeightGraph;
 
     public Graph(FitActivity activity) {
-        this(activity, false);
+        this(activity, false, false);
     }
 
-    private Graph(FitActivity activity, boolean bestPowerGraph) {
+    private Graph(FitActivity activity, boolean bestPowerGraph, boolean powerWeightGraph) {
         this.bestPowerGraph = bestPowerGraph;
+        this.powerWeightGraph = powerWeightGraph;
         points = bestPowerGraph
                 ? new ArrayList<>(bestPowerPoints(activity))
                 : powerPoints(activity);
         setPreferredSize(new Dimension(900, 550));
         setBackground(Color.WHITE);
     }
+    public static void showPowerWeightGraph(FitActivity activity, int w) {
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            System.out.println("Cannot display the power graph because Java is running in headless mode.");
+            return;
+        }
 
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Power/Weight over time");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setContentPane(new Graph(activity, true, true));
+            frame.pack();
+            frame.setLocationByPlatform(true);
+            frame.setVisible(true);
+        });
+    }
     public static void showPowerGraph(FitActivity activity) {
         if (java.awt.GraphicsEnvironment.isHeadless()) {
             System.out.println("Cannot display the power graph because Java is running in headless mode.");
@@ -72,7 +88,7 @@ public final class Graph extends JPanel {
         javax.swing.SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Best power duration curve");
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.setContentPane(new Graph(activity, true));
+            frame.setContentPane(new Graph(activity, true, false));
             frame.pack();
             frame.setLocationByPlatform(true);
             frame.setVisible(true);
@@ -253,6 +269,16 @@ public final class Graph extends JPanel {
         List<PowerPoint> result = new ArrayList<>();
         for (int interval : BEST_POWER_INTERVALS_SECONDS) {
             Double power = bestPowerWatts(activity, interval);
+            if (power != null) {
+                result.add(new PowerPoint(interval, power));
+            }
+        }
+        return List.copyOf(result);
+    }
+    public static List<PowerPoint> bestPowerPointsWeight(FitActivity activity, int weight) {
+        List<PowerPoint> result = new ArrayList<>();
+        for (int interval : BEST_POWER_INTERVALS_SECONDS) {
+            Double power = bestPowerWatts(activity, interval)/weight;
             if (power != null) {
                 result.add(new PowerPoint(interval, power));
             }
