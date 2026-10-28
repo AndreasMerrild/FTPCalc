@@ -1,8 +1,9 @@
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - Input objects
   - [Done] Change the way it takes the FTP to be user input
   - [Done] Change the way it takes the weight to be user input.
   - [Done] Change the way the name is input. 
-
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - Add test cases for
   - firstInput is outside applicable range
   - firstInput is 1
@@ -19,24 +20,41 @@
   - power is -70
   - power is strings
 
-
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - [Done] Add a way to load fit files and extract the data from them.
 - [Done] Add a way to view the powerdata from the fit files as a graph.
 - [Done] Add a way to load a folder of fit files and extract the data from them.
 - [Done] Add a way to view the best power graph with time on x axis and power on y axis.
 - [Done] Add a way to view the best power graph with time on x axis and power/weight on y axis.
+- Add a table view of best power data. 
+- Add a table view of best power/weight data.
+- Add a table of data on each lap in the fit file. (Averages and Max)
+- Add a way to show TSS
+- Add a way to show IF
+- Add a way to show the NP
+- Add a way to show the VI
+- 
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+For a longer period of time, add a way to show the CTL, ATL, and TSB.
+- Add a way to show the CTL
+- Add a way to show the ATL
+- Add a way to show the TSB
+- Add a graph to show the CTL, ATL, and TSB over time.
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - Add a way to save the data to a file.
 - Add a way to load the data from a file.
 - Add a way to edit the data after it has been saved.
 - Add a way to delete the data after it has been saved.
 - Add a way to view the data after it has been saved.
-- When saving data make it s that it is for a single athlete
+- When saving data make it so that it is for a single athlete
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - Add a way to view the data as a graph. 
 - Add a way to view the data as a table.
 
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - Add a graphical user interface to the program.
 - Add a way to view the data as a graph in the graphical user interface.
 - Add a way to view the data as a table in the graphical user interface.

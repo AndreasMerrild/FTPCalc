@@ -163,6 +163,15 @@ public class Running {
                         System.out.println("Showing a graph with best power per weight data");
                         Graph.showPowerWeightGraph(usage.activities(), w);
                     }
+                    else if (choice.equals("3")) {
+                        System.out.println("Calculating FTP from the best 20 min");
+                        ftp myFtp = new ftp("Athlete", null);
+                        double ftp = myFtp.ftpCalc(usage.bestTwentyMinutePower());
+                        System.out.println("The FTP is: " + ftp);
+                    }
+                    else if (choice.equals("4")) {
+
+                    }
                     else {
                         System.out.println("This is not applicable at the moment please try one of the other options. ");
                     }

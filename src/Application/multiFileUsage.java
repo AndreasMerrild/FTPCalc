@@ -117,4 +117,8 @@ public class multiFileUsage {
         }
         return meters / 1000.0;
     }
+
+    public double bestTwentyMinutePower() {
+        return 0.0;
+    }
 }
